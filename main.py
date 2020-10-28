@@ -53,17 +53,17 @@ class NodeRender:
         offset = (0, 0)
 
         if type == 0:
-            font_size = '25'
+            font_size = '35'
             value = self.node.f
-            offset = (0, 5)
+            offset = (0, 10)
         elif type == 1:
-            font_size = '12'
+            font_size = '22'
             value = self.node.g
-            offset = (-15, -17)
+            offset = (-25, -25)
         else:
-            font_size = '12'
+            font_size = '22'
             value = self.node.h
-            offset = (15, -17)
+            offset = (25, -25)
 
         return self.master_canvas.create_text(self.center_position[0] + offset[0],
                                               self.center_position[1] + offset[1],
@@ -82,7 +82,7 @@ class NodeRender:
 class Game(tk.Frame):
     def __init__(self, master):
         super(Game, self).__init__(master)
-        self.box_size = (60, 60)
+        self.box_size = (100, 100)
         self.n = (7, 4)
 
         self.width = self.box_size[0] * self.n[0]
@@ -107,8 +107,8 @@ class Game(tk.Frame):
         self.canvas.pack()
         self.pack()
 
-        self.auto_search()
-        self.update()
+        # self.auto_search()
+        # self.update()
 
     def auto_search(self):
         while len(self.OPEN) != 0:
@@ -221,14 +221,15 @@ class Game(tk.Frame):
         self.start_node = self.matrix[i][j].node
         self.start_node.parent = self.start_node
         self.matrix[i][j].node.is_start = True
+        self.set_fgh(self.matrix[i][j].node)
 
     def set_goal_node(self, i, j):
         self.goal_node = self.matrix[i][j].node
         self.matrix[i][j].node.is_goal = True
 
     def init_node(self):
-        self.set_start_node(1, 3)
         self.set_goal_node(6, 1)
+        self.set_start_node(1, 3)
 
         self.add_block_node(3, 1)
         self.add_block_node(4, 1)
@@ -239,6 +240,13 @@ class Game(tk.Frame):
     def left_button(self, event):
         i = event.x // self.box_size[0]
         j = event.y // self.box_size[1]
+
+        if self.matrix[i][j].node.is_goal:
+            self.OPEN.remove(self.goal_node)
+            self.CLOSED_Add(self.goal_node)
+            self.find()
+            self.update()
+            return
 
         self.search(i, j)
         self.update()
