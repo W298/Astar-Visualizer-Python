@@ -6,8 +6,6 @@ class Node:
         self.renderer = renderer
         self.index = (i, j)
         self.parent = None
-        self.is_start = False
-        self.is_goal = False
         self.blocked = False
         self.f = 0
         self.g = 0
@@ -80,10 +78,10 @@ class NodeRender:
 
 
 class Game(tk.Frame):
-    def __init__(self, master):
+    def __init__(self, master, size, start_index, goal_index, blocked_list):
         super(Game, self).__init__(master)
         self.box_size = (100, 100)
-        self.n = (7, 4)
+        self.n = size
 
         self.width = self.box_size[0] * self.n[0]
         self.height = self.box_size[1] * self.n[1]
@@ -91,7 +89,6 @@ class Game(tk.Frame):
         self.canvas = tk.Canvas(self, bg='#ffffff', width=self.width, height=self.height)
 
         self.canvas.bind('<Button-1>', self.left_button)
-        self.canvas.bind('<Button-3>', self.right_button)
 
         self.OPEN = []
         self.CLOSED = []
@@ -101,14 +98,13 @@ class Game(tk.Frame):
         self.goal_node = None
 
         self.matrix = [[]]
-        self.setup_matrix()
+        self.setup_matrix(start_index, goal_index, blocked_list)
 
         self.canvas.focus_set()
         self.canvas.pack()
         self.pack()
 
-        # self.auto_search()
-        # self.update()
+        self.auto_search()
 
     def auto_search(self):
         while len(self.OPEN) != 0:
@@ -124,13 +120,15 @@ class Game(tk.Frame):
                     min_node = node
                     min_f = node.f
 
-            if min_node.is_goal:
+            if min_node == self.goal_node:
                 self.OPEN.remove(min_node)
                 self.CLOSED_Add(min_node)
                 self.find()
                 break
 
             self.search(min_node.index[0], min_node.index[1])
+
+        self.update()
 
     def OPEN_Add(self, node):
         self.OPEN.append(node)
@@ -205,7 +203,7 @@ class Game(tk.Frame):
         path = []
         while node is not None:
             path.append(node)
-            if node.is_start:
+            if node == self.start_node:
                 break
             node = node.parent
 
@@ -220,20 +218,17 @@ class Game(tk.Frame):
     def set_start_node(self, i, j):
         self.start_node = self.matrix[i][j].node
         self.start_node.parent = self.start_node
-        self.matrix[i][j].node.is_start = True
         self.set_fgh(self.matrix[i][j].node)
 
     def set_goal_node(self, i, j):
         self.goal_node = self.matrix[i][j].node
-        self.matrix[i][j].node.is_goal = True
 
-    def init_node(self):
-        self.set_goal_node(6, 1)
-        self.set_start_node(1, 3)
+    def init_node(self, start_index, goal_index, blocked_list):
+        self.set_goal_node(goal_index[0], goal_index[1])
+        self.set_start_node(start_index[0], start_index[1])
 
-        self.add_block_node(3, 1)
-        self.add_block_node(4, 1)
-        self.add_block_node(4, 2)
+        for t in blocked_list:
+            self.add_block_node(t[0], t[1])
 
         self.OPEN_Add(self.start_node)
 
@@ -241,7 +236,7 @@ class Game(tk.Frame):
         i = event.x // self.box_size[0]
         j = event.y // self.box_size[1]
 
-        if self.matrix[i][j].node.is_goal:
+        if self.matrix[i][j].node == self.goal_node:
             self.OPEN.remove(self.goal_node)
             self.CLOSED_Add(self.goal_node)
             self.find()
@@ -251,10 +246,7 @@ class Game(tk.Frame):
         self.search(i, j)
         self.update()
 
-    def right_button(self, event):
-        self.update()
-
-    def setup_matrix(self):
+    def setup_matrix(self, start_index, goal_index, blocked_list):
         for i in range(0, self.n[0]):
             temp_list = []
             for j in range(0, self.n[1]):
@@ -264,7 +256,7 @@ class Game(tk.Frame):
             else:
                 self.matrix.append(temp_list.copy())
 
-        self.init_node()
+        self.init_node(start_index, goal_index, blocked_list)
         self.update_node_render()
 
     def create_node_render(self, i, j):
@@ -279,8 +271,12 @@ class Game(tk.Frame):
     def update(self):
         self.update_node_render()
 
+
 if __name__ == '__main__':
     root = tk.Tk()
     root.title('A_Star')
-    game = Game(root)
+
+    b_list = [(3, 1), (4, 1), (4, 2), (4, 3), (3, 3), (3, 4), (3, 0), (6, 2)]
+    game = Game(root, (8, 7), (1, 2), (6, 1), b_list)
+
     game.mainloop()
